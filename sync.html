@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ETC 89 · Sincronizador LRC</title>
+<style>
+:root{--bg:#fbfaf6;--panel:#fff;--text:#171717;--muted:#77736a;--gold:#b58a2d;--gold2:#d7b75d;--border:rgba(181,138,45,.2);--shadow:0 20px 70px rgba(70,48,8,.09)}
+html[data-theme=dark]{--bg:#0d0d0c;--panel:#151410;--text:#f8f4e9;--muted:#aaa397;--gold:#d6ad4e;--gold2:#f0cf76;--border:rgba(214,173,78,.2);--shadow:0 20px 70px rgba(0,0,0,.3)}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 10%,color-mix(in srgb,var(--gold) 9%,transparent),transparent 30%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;transition:.3s}
+button{font:inherit}.wrap{width:min(960px,calc(100% - 32px));margin:auto;padding:28px 0 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:15px}.brand b{letter-spacing:.16em;font-size:.8rem}.brand div{color:var(--gold);font-size:.67rem;letter-spacing:.17em;margin-top:4px}.round{width:42px;height:42px;border-radius:50%;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer}
+.card{margin-top:32px;border:1px solid var(--border);background:color-mix(in srgb,var(--panel) 88%,transparent);border-radius:28px;padding:clamp(22px,5vw,50px);box-shadow:var(--shadow)}
+.time{text-align:center;font-variant-numeric:tabular-nums;font-size:clamp(2.8rem,8vw,6rem);font-weight:800;letter-spacing:-.06em}
+.meta{text-align:center;color:var(--gold);font-weight:700;font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;margin-top:6px}
+.line{min-height:150px;display:grid;place-items:center;text-align:center;font-size:clamp(1.8rem,5vw,3.7rem);line-height:1.04;font-weight:800;letter-spacing:-.035em;margin:25px 0}
+.next{text-align:center;color:var(--muted);font-size:.9rem;min-height:22px;margin-bottom:25px}
+.mark{display:block;width:min(420px,100%);margin:auto;padding:20px;border:0;border-radius:999px;background:linear-gradient(90deg,var(--gold),var(--gold2));color:#15120a;font-weight:900;letter-spacing:.1em;cursor:pointer;box-shadow:0 12px 35px color-mix(in srgb,var(--gold) 22%,transparent)}
+.mark:active{transform:scale(.985)}
+.controls,.fine,.exports{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:16px}
+.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:11px 16px;border-radius:999px;cursor:pointer;font-weight:700}.btn:hover{border-color:var(--gold)}
+.progress{margin:30px 0 0;height:5px;background:var(--border);border-radius:99px;overflow:hidden}.progress>div{height:100%;background:var(--gold);width:0}
+.log{margin-top:22px;border-top:1px solid var(--border);padding-top:20px;max-height:260px;overflow:auto}.logrow{display:grid;grid-template-columns:90px 1fr;gap:12px;padding:8px 4px;color:var(--muted);font-size:.86rem}.logrow.current{color:var(--text);font-weight:700}.stamp{font-variant-numeric:tabular-nums;color:var(--gold)}
+.help{margin:20px auto 0;text-align:center;color:var(--muted);font-size:.78rem;line-height:1.6;max-width:680px}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:6px;padding:2px 6px;background:var(--panel);color:var(--text)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:.8rem;font-weight:700;transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:600px){.wrap{width:min(100% - 20px,960px)}.card{border-radius:22px}.line{min-height:130px}.logrow{grid-template-columns:76px 1fr}}
+</style>
+</head>
+<body>
+<audio id="audio" preload="metadata" src="INTRO COCINA ETC LXXXIX.mp3"></audio>
+<div class="wrap">
+ <div class="top">
+  <div class="brand"><b>COCINA ETC 89</b><div>MODO SINCRONIZACIÓN</div></div>
+  <button class="round" id="theme" title="Claro / oscuro">◐</button>
+ </div>
+ <section class="card">
+  <div class="time" id="time">00:00.000</div>
+  <div class="meta" id="count">Línea 1</div>
+  <div class="line" id="line"></div>
+  <div class="next" id="next"></div>
+  <button class="mark" id="mark">MARCAR · ESPACIO</button>
+  <div class="controls">
+   <button class="btn" id="play">▶ Reproducir</button>
+   <button class="btn" id="back">− 3 s</button>
+   <button class="btn" id="forward">+ 3 s</button>
+   <button class="btn" id="undo">↶ Deshacer</button>
+  </div>
+  <div class="fine">
+   <button class="btn" id="minus">Marca −0.10 s</button>
+   <button class="btn" id="plus">Marca +0.10 s</button>
+  </div>
+  <div class="progress"><div id="bar"></div></div>
+  <div class="exports">
+   <button class="btn" id="saveLog">Exportar log</button>
+   <button class="btn" id="saveLrc">Generar LRC</button>
+   <button class="btn" id="reset">Borrar sesión</button>
+  </div>
+  <div class="log" id="log"></div>
+ </section>
+ <div class="help"><kbd>Espacio</kbd> marca la línea · <kbd>←</kbd>/<kbd>→</kbd> mueve el audio 3 s · <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshace. El progreso se guarda automáticamente en este navegador.</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const LYRICS = ["Llegó el avión…", "¡Sí!", "¡Y es!", "Ajá", "Este es el vuelo ETC89 con destino a...", "¡Jesucristo!", "Ay, qué lindo, mortal", "¡Los cocineros del 89!", "La cocina 89, el sazón que a ti te mueve", "La cocina 89, el sazón que a ti te mueve", "Viene lleno de comida, también de alegría", "Viene lleno de comida, también de alegría", "A cocinar en este retiro con la gente mía,", "A cocinar en este retiro con la gente mía.", "La cocina 89, el sazón que a ti te mueve", "La cocina 89, el sazón que a ti te mueve", "Y mira a ver si caben más pa′ llevárlo a cocinar", "Mira a ver si caben más pa' llevárlo a cocinar", "Que tengo siete calderos y con eso no me da", "Que tengo siete calderos y con eso no me da", "La cocina 89, el sazón que a ti te mueve", "La cocina 89, el sazón que a ti te mueve", "Sí", "¡Oye! Sacaste la comida del caldero", "Que esta gente tiene hambre y le gusta el molondrón.", "JAJAJA", "¡Cocina ETC 89!", "La cocina 89, el sazón que a ti te mueve", "La cocina 89, el sazón que a ti te mueve", "El caldero está en la estufa, me da el olorcito, cuando dicen listo, sólo se oye esto.", "Ay, yo sí los quiero a ustedes", "Y nosotros te queremos", "Ay, yo sí los quiero a ustedes", "Y nosotros te queremos", "La cocina 89, el sazón que a ti te mueve", "La cocina 89, el sazón que a ti te mueve", "Yo sé que te gusta, te estoy encantando", "Ábreme la puerta que voy cocinando", "Yo sé que te gusta, yo sé que te encanta", "Ábreme la puerta que vengo cantando", "Abre que voy (con el caldero)", "Abre que voy (echando sazón)", "Abre que voy (tirando aceite)", "Abre que voy (que no se queme el arroz)", "Abre que voy (con una mano de plátano)", "Abre que voy (probando el concón)", "Abre que voy (con fósforos y gas)", "Abre que voy (¡se forma el fogón!)", "Tun tun, ¿quién es? (¡Juan Pablo y Rocadis, los maestros chef!)", "Tun tun, ¿quién es? (¡Pedro y Sandrita, los inspectores del sabor!)", "Tun tun, ¿quién es? (¡José David y Gabriela, encargados del sazón!)", "Tun tun, ¿quién es? (¡Loreinne y Yadhira, las lloronas con las cebollas!)", "Tun tun, ¿quién es? (¡Glorimer y Jeannette, las madres del arroz!)", "Tun tun, ¿quién es? (¡Luis Brioso y Miguel, subiéndole al fogón!)", "Tun tun, ¿quién es? (¡Yarelina y Andrés, meneando el cucharón!)", "Tun tun, ¿quién es? (¡Chayna y Daniel, Los baritstas del café!)", "Tun tun, ¿quién es? (¡Edania y Hansel, fregando los platos!)", "Tun tun, ¿quién es? (¡Laura y Juan, Las manos del pilón!)", "Tun tun, ¿quién es? (¡Juanjo y Vilma, los pela papa!)", "Tun tun, ¿quién son? (¡La cocina, ETC 89)", "Tun tun, ¿qué es? (¡Qué rico, ¡qué rico, prueba, este manjar!)", "Tun tun, ¿qué es? (¡Cinco panes y dos peces!)", "Tun tun, ¿quién es? (¡Jesús los partió, los multiplicó… y los repartió!)", "Abre que voy (abre, abre)", "Abre que voy (abre que voy echando)", "Abre que voy (voy cocinando)", "Abre que voy (bailando salsa)", "Abre que voy (¡somos la cocina!)"];
+const KEY='etc89-sync-session-v1';
+const audio=document.querySelector('#audio'), timeEl=document.querySelector('#time'), lineEl=document.querySelector('#line'), nextEl=document.querySelector('#next'), countEl=document.querySelector('#count'), logEl=document.querySelector('#log'), bar=document.querySelector('#bar');
+let marks=JSON.parse(localStorage.getItem(KEY)||'[]');
+marks=marks.filter((x,i)=>i<LYRICS.length && Number.isFinite(x));
+function fmt(t, lrc=false){t=Math.max(0,t||0);let m=Math.floor(t/60),s=t-m*60;if(lrc)return `[${String(m).padStart(2,'0')}:${s.toFixed(2).padStart(5,'0')}]`;return `${String(m).padStart(2,'0')}:${s.toFixed(3).padStart(6,'0')}`}
+function persist(){localStorage.setItem(KEY,JSON.stringify(marks))}
+function toast(s){const e=document.querySelector('#toast');e.textContent=s;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1300)}
+function render(){
+ let i=marks.length;
+ lineEl.textContent=i<LYRICS.length?LYRICS[i]:'¡Sincronización completada!';
+ nextEl.textContent=i+1<LYRICS.length?'Siguiente: '+LYRICS[i+1]:'';
+ countEl.textContent=i<LYRICS.length?`Línea ${i+1} de ${LYRICS.length}`:`${LYRICS.length} de ${LYRICS.length} líneas marcadas`;
+ bar.style.width=(i/LYRICS.length*100)+'%';
+ logEl.innerHTML=marks.map((t,j)=>`<div class="logrow ${j===marks.length-1?'current':''}"><span class="stamp">${fmt(t)}</span><span>${esc(LYRICS[j])}</span></div>`).join('');
+ logEl.scrollTop=logEl.scrollHeight;
+}
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function mark(){
+ if(marks.length>=LYRICS.length)return toast('Ya terminaste');
+ marks.push(audio.currentTime);persist();render();
+}
+function undo(){if(!marks.length)return;marks.pop();persist();render();toast('Última marca eliminada')}
+function adjust(d){if(!marks.length)return toast('Todavía no hay marca');marks[marks.length-1]=Math.max(0,marks[marks.length-1]+d);persist();render()}
+function dl(name,text,type='text/plain'){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+document.querySelector('#mark').onclick=mark;
+document.querySelector('#play').onclick=()=>audio.paused?audio.play():audio.pause();
+document.querySelector('#back').onclick=()=>audio.currentTime=Math.max(0,audio.currentTime-3);
+document.querySelector('#forward').onclick=()=>audio.currentTime=Math.min(audio.duration||Infinity,audio.currentTime+3);
+document.querySelector('#undo').onclick=undo;
+document.querySelector('#minus').onclick=()=>adjust(-.1);
+document.querySelector('#plus').onclick=()=>adjust(.1);
+document.querySelector('#saveLog').onclick=()=>dl('etc89-sync-log.txt',marks.map((t,i)=>`${fmt(t)} | ${LYRICS[i]}`).join('\n'));
+document.querySelector('#saveLrc').onclick=()=>dl('lyrics.lrc',marks.map((t,i)=>`${fmt(t,true)}${LYRICS[i]}`).join('\n'));
+document.querySelector('#reset').onclick=()=>{if(confirm('¿Borrar todas las marcas guardadas?')){marks=[];persist();render()}};
+audio.addEventListener('timeupdate',()=>timeEl.textContent=fmt(audio.currentTime));
+audio.addEventListener('play',()=>document.querySelector('#play').textContent='❚❚ Pausar');
+audio.addEventListener('pause',()=>document.querySelector('#play').textContent='▶ Reproducir');
+document.addEventListener('keydown',e=>{
+ if(e.code==='Space' && !e.repeat){e.preventDefault();mark()}
+ else if(e.key==='ArrowLeft'){e.preventDefault();audio.currentTime=Math.max(0,audio.currentTime-3)}
+ else if(e.key==='ArrowRight'){e.preventDefault();audio.currentTime=Math.min(audio.duration||Infinity,audio.currentTime+3)}
+ else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo()}
+});
+const themeKey='etc89-sync-theme';document.documentElement.dataset.theme=localStorage.getItem(themeKey)||'light';
+document.querySelector('#theme').onclick=()=>{let t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem(themeKey,t)};
+render();
+</script>
+</body></html>
